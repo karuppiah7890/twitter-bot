@@ -22,16 +22,7 @@ function followed(event) {
 
   console.log(name,screen_name);
 
-  T.post('statuses/update', { status: '@' + screen_name + '! Thanks for following me!' }, function(err, data, response) {
-
-    if(err) {
-      console.log(err);
-      return;
-    }
-
-    console.log(data);
-  })
-
+  tweetIt('@' + screen_name + ' thanks for following me!');
 }
 
 userStream.on('tweet',tweeted);
@@ -41,14 +32,20 @@ function tweeted(event) {
   var from = event.user.screen_name;
 
   if(replyTo === 'karuppiahbot') {
-    T.post('statuses/update', { status: '@' + from + ' thanks for tweeting to me!' }, function(err, data, response) {
-
-      if(err) {
-        console.log(err);
-        return;
-      }
-
-      console.log(data);
-    })
+    tweetIt('@' + from + ' thanks for tweeting to me!');
   }
+}
+
+function tweetIt(tweet) {
+  var r = Math.floor(Math.random()*100000);
+
+  T.post('statuses/update', { status: tweet + ' Your cookie number is ' + r + ' :P '}, function(err, data, response) {
+
+    if(err) {
+      console.log(err);
+      return;
+    }
+
+    console.log(data);
+  })
 }
