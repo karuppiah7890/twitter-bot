@@ -1,4 +1,19 @@
+const db = require('./db');
+const mongoose = require('mongoose');
+const User = mongoose.model('User');
+
 console.log("Twitter Bot is starting.");
+
+const ConversationV1 = require('watson-developer-cloud/conversation/v1');
+
+const conversation = new ConversationV1({
+  username: process.env.WATSON_USERNAME,
+  password: process.env.WATSON_PASSWORD,
+  version_date: ConversationV1.VERSION_DATE_2017_04_21
+});
+
+const workspace_id = '5cf41128-4b07-47e9-be8a-93f2231a9056';
+
 
 const Twit = require('twit');
 
@@ -28,12 +43,81 @@ function followed(event) {
 userStream.on('tweet',tweeted);
 
 function tweeted(event) {
+  //console.log(event);
   var replyTo = event.in_reply_to_screen_name;
   var from = event.user.screen_name;
 
   if(replyTo === 'karuppiahbot') {
     tweetIt('@' + from + ' thanks for tweeting to me!');
   }
+}
+
+userStream.on('direct_message', messaged);
+
+function messaged(event) {
+
+  console.log(event);
+
+  if(event.direct_message.sender.screen_name === 'karuppiahbot')
+  return;
+
+
+  User.findOne({ id: event.direct_message.sender.id_str })
+  .then((result) => {
+
+    const context = result? result.context : null;
+
+    conversation.message({
+      input: { text: event.direct_message.text },
+      workspace_id: workspace_id,
+      context: context
+    }, processResponse);
+
+    function processResponse(err, response) {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log(JSON.stringify(response, null, 2));
+
+          const options = {
+            user_id: event.direct_message.sender.id_str,
+            text: response.output.text[0]
+          };
+
+          console.log(options);
+
+          T.post('direct_messages/new', options)
+          .then((result) => {
+            //console.log(result);
+          })
+          .catch((err) => {
+            console.error(err);
+          })
+
+          if(context) {
+            User.findOneAndUpdate({ id: event.direct_message.sender.id_str },
+              { context: response.context })
+            .then((result) => {
+              console.log(result);
+            })
+            .catch((err) => {
+              console.error(err);
+            })
+          } else {
+            User.create({
+              id: event.direct_message.sender.id_str,
+              context: response.context
+            })
+          }
+
+        }
+    }
+
+  })
+  .catch((err) => {
+    console.error(err);
+  })
+
 }
 
 function tweetIt(tweet) {

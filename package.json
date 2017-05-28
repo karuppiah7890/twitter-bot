@@ -4,7 +4,7 @@
   "description": "Twitter Bot",
   "main": "bot.js",
   "scripts": {
-    "start":"node bot.js",
+    "start": "node bot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -14,6 +14,8 @@
   "author": "Karuppiah",
   "license": "MIT",
   "dependencies": {
-    "twit": "^2.2.5"
+    "mongoose": "^4.10.3",
+    "twit": "^2.2.5",
+    "watson-developer-cloud": "^2.32.1"
   }
 }
