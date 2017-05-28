@@ -56,13 +56,14 @@ userStream.on('direct_message', messaged);
 
 function messaged(event) {
 
-  console.log(event);
+  console.log("messaged", event, "\n\n");
 
   if(event.direct_message.sender.screen_name === 'karuppiahbot')
   return;
 
+  const user_id = event.direct_message.sender.id_str;
 
-  User.findOne({ id: event.direct_message.sender.id_str })
+  User.findOne({ id: user_id })
   .then((result) => {
 
     const context = result? result.context : null;
@@ -75,39 +76,40 @@ function messaged(event) {
 
     function processResponse(err, response) {
         if (err) {
-          console.error(err);
+          console.error("Bug while getting watson response : ", err, "\n\n");
         } else {
           console.log(JSON.stringify(response, null, 2));
 
           const options = {
-            user_id: event.direct_message.sender.id_str,
+            user_id: user_id,
             text: response.output.text[0]
           };
 
-          console.log(options);
+          console.log("Options for DM to send : ",options, "\n\n");
 
           T.post('direct_messages/new', options)
           .then((result) => {
-            //console.log(result);
+            console.log("Bug while sending DM : ", result.error, "\n\n");
           })
           .catch((err) => {
-            console.error(err);
+            console.error("Bug while sending DM : ",err, "\n\n");
           })
 
           if(context) {
-            User.findOneAndUpdate({ id: event.direct_message.sender.id_str },
-              { context: response.context })
-            .then((result) => {
-              console.log(result);
-            })
-            .catch((err) => {
-              console.error(err);
-            })
+            User.findOneAndUpdate({ id: user_id }, { context: response.context }, { new: true },
+              (err, result) => {
+                console.log("Update", result);
+            });
           } else {
             User.create({
-              id: event.direct_message.sender.id_str,
+              id: user_id,
               context: response.context
+            }).then((result) => {
+              console.log("User added or updated ", result, "\n\n");
+            }).catch((err) => {
+              console.error("Bug in creating user: ", err, "\n\n");
             })
+
           }
 
         }
@@ -115,7 +117,7 @@ function messaged(event) {
 
   })
   .catch((err) => {
-    console.error(err);
+    console.error("DB Bug : ", err, "\n\n");
   })
 
 }
