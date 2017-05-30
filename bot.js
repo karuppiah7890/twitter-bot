@@ -47,6 +47,10 @@ function tweeted(event) {
   var replyTo = event.in_reply_to_screen_name;
   var from = event.user.screen_name;
 
+  if(from === 'karuppiahbot') {
+    return;
+  }
+  
   if(replyTo === 'karuppiahbot') {
     tweetIt('@' + from + ' thanks for tweeting to me!');
   }
